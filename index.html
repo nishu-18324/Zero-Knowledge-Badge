@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ZKP NFT Frontend</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/web3/1.7.4/web3.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- Background Image Container -->
+    <div id="background-container">
+        <div class="background-image active" style="background-image: url('image1.jpg');"></div>
+        <div class="background-image" style="background-image: url('image2.jpg');"></div>
+        <div class="background-image" style="background-image: url('image3.jpg');"></div>
+        <div class="background-image" style="background-image: url('image4.jpg');"></div>
+    </div>
+
+    <div id="app">
+        <!-- Navigation Bar -->
+        <nav>
+            <a href="#home" onclick="showPage('home')">Home</a>
+            <a href="#verify" onclick="showPage('verify')">Verification</a>
+            <a href="#mint" onclick="showPage('mint')">Mint NFT</a>
+        </nav>
+
+        <!-- Home Page -->
+        <div id="home" class="page">
+            <h2>Welcome to Zero-Knowledge Proof NFT</h2>
+            <button onclick="connectWallet()">Connect Wallet</button>
+            <p id="walletAddress">Not Connected</p>
+        </div>
+
+        <!-- Verification Page -->
+        <div id="verify" class="page" style="display:none;">
+            <h2>User Verification</h2>
+            <button onclick="verifyUser()">Verify User</button>
+            <p id="verifyStatus"></p>
+        </div>
+
+        <!-- Minting Page -->
+        <div id="mint" class="page" style="display:none;">
+            <h2>Mint Your NFT</h2>
+            <button onclick="mintNFT()">Mint NFT</button>
+            <p id="mintStatus"></p>
+        </div>
+    </div>
+
+    <script>
+        let web3;
+        let contract;
+        const contractAddress = "0x8d5F548D83C259D6e89D2F81b375925f23a55d65";
+        const contractABI = [
+            {
+                "inputs": [],
+                "name": "mintNFT",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [{ "internalType": "address", "name": "user", "type": "address" }],
+                "name": "verifyUser",
+                "outputs": [],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            }
+        ];
+
+        async function connectWallet() {
+            if (window.ethereum) {
+                web3 = new Web3(window.ethereum);
+                try {
+                    await window.ethereum.request({ method: "eth_requestAccounts" });
+                    const accounts = await web3.eth.getAccounts();
+                    
+                    if (accounts.length > 0) {
+                        document.getElementById("walletAddress").innerText = "Connected: " + accounts[0];
+                        contract = new web3.eth.Contract(contractABI, contractAddress);
+                    } else {
+                        document.getElementById("walletAddress").innerText = "❌ Wallet is not connected";
+                    }
+                } catch (error) {
+                    document.getElementById("walletAddress").innerText = "❌ Wallet is not connected";
+                }
+            } else {
+                alert("Please install MetaMask!");
+                document.getElementById("walletAddress").innerText = "❌ Wallet is not connected";
+            }
+        }
+
+        async function verifyUser() {
+            const accounts = await web3.eth.getAccounts();
+            contract.methods.verifyUser(accounts[0]).send({ from: accounts[0] })
+                .then(() => document.getElementById("verifyStatus").innerText = "✅ User Verified!")
+                .catch(() => document.getElementById("verifyStatus").innerText = "❌ Verification Failed!");
+        }
+
+        async function mintNFT() {
+            const accounts = await web3.eth.getAccounts();
+            contract.methods.mintNFT().send({ from: accounts[0] })
+                .then(() => document.getElementById("mintStatus").innerText = "🎉 NFT Minted!")
+                .catch(() => document.getElementById("mintStatus").innerText = "❌ Minting Failed!");
+        }
+
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(page => page.style.display = 'none');
+            document.getElementById(pageId).style.display = 'block';
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: white;
+            text-align: center;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        #app {
+            width: 90%;
+            max-width: 500px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 10px;
+        }
+
+        nav {
+            background-color: rgba(0, 0, 0, 0.7);
+            padding: 10px 0;
+            position: fixed;
+            width: 100%;
+            top: 0;
+            left: 0;
+        }
+
+        nav a {
+            color: white;
+            margin: 0 10px;
+            text-decoration: none;
+            padding: 5px 10px;
+            transition: background 0.3s;
+        }
+
+        nav a:hover {
+            background-color: #007bff;
+            border-radius: 5px;
+        }
+
+        .page {
+            margin-top: 20px;
+            padding: 20px;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: transform 0.2s;
+        }
+
+        button:hover {
+            transform: scale(1.1);
+        }
+
+        /* Background Transition */
+        #background-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        .background-image {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            opacity: 0;
+            transition: opacity 1.5s ease-in-out;
+        }
+
+        .background-image.active {
+            opacity: 1;
+        }
+    </style>
+
+    <script>
+        let currentImageIndex = 0;
+        const images = document.querySelectorAll('.background-image');
+
+        function changeBackgroundImage() {
+            images[currentImageIndex].classList.remove('active');
+            currentImageIndex = (currentImageIndex + 1) % images.length;
+            images[currentImageIndex].classList.add('active');
+        }
+
+        setInterval(changeBackgroundImage, 5000);
+    </script>
+
+</body>
+</html>
